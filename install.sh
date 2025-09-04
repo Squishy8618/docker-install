@@ -52,27 +52,41 @@ install_dependency() {
 
 # Function to display menu and get user input for distro selection
 select_distro() {
-    echo "Please select your Linux distribution:"
-    echo "1) Debian"
-    echo "2) Ubuntu Server"
-    echo "3) Rocky Linux"
-    read -p "Enter the number of your choice (1-3): " choice
+    # Check if running in a non-interactive environment
+    if [ ! -t 0 ]; then
+        error_exit "This script requires interactive input to select a distribution. Please download the script and run it manually with 'sudo bash install.sh'."
+    fi
 
-    case $choice in
-        1)
-            DISTRO="Debian"
-            ;;
-        2)
-            DISTRO="Ubuntu"
-            ;;
-        3)
-            DISTRO="Rocky"
-            ;;
-        *)
-            echo "Invalid choice. Please select a number between 1 and 3."
-            select_distro
-            ;;
-    esac
+    local retries=0
+    local max_retries=5
+    DISTRO=""
+
+    while [ -z "$DISTRO" ] && [ $retries -lt $max_retries ]; do
+        echo "Please select your Linux distribution:"
+        echo "1) Debian"
+        echo "2) Ubuntu Server"
+        echo "3) Rocky Linux"
+        read -p "Enter the number of your choice (1-3): " choice
+
+        case $choice in
+            1)
+                DISTRO="Debian"
+                ;;
+            2)
+                DISTRO="Ubuntu"
+                ;;
+            3)
+                DISTRO="Rocky"
+                ;;
+            *)
+                echo "Invalid choice. Please select a number between 1 and 3."
+                retries=$((retries + 1))
+                if [ $retries -eq $max_retries ]; then
+                    error_exit "Too many invalid attempts. Exiting."
+                fi
+                ;;
+        esac
+    done
 }
 
 # Function to install Docker on Debian
